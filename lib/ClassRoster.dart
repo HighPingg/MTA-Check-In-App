@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:mta_check_in/QRScanner.dart';
+
 class ClassRoster extends StatefulWidget {
   String course;
 
@@ -47,7 +49,7 @@ class _ClassRosterState extends State<ClassRoster> {
         foregroundColor: const Color(0xffffffff),
         centerTitle: false,
         title: Container(
-          height: MediaQuery.of(context).size.height * 0.08,
+          height: MediaQuery.of(context).size.height * 0.05,
           child: Row(children: [
             Image.asset("lib/assets/MTA_NYC_logo.png", fit: BoxFit.fitHeight),
             Container(
@@ -88,7 +90,12 @@ class _ClassRosterState extends State<ClassRoster> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 OutlinedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => QRScanner(course: course)));
+                    },
                     child: const Row(children: [
                       Icon(Icons.qr_code_scanner),
                       SizedBox(width: 10),

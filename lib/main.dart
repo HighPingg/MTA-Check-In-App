@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'ClassRoster.dart';
@@ -11,6 +12,11 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+
     return MaterialApp(
       title: _title,
       theme: ThemeData(
@@ -69,7 +75,7 @@ class _MyHomePageState extends State<MyHomePage> {
           foregroundColor: const Color(0xffffffff),
           centerTitle: false,
           title: Container(
-            height: MediaQuery.of(context).size.height * 0.08,
+            height: MediaQuery.of(context).size.height * 0.05,
             child: Row(children: [
               Image.asset("lib/assets/MTA_NYC_logo.png", fit: BoxFit.fitHeight),
               Container(
