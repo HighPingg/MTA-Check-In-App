@@ -3,25 +3,31 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class QRScanner extends StatefulWidget {
   String course;
+  List<String> students;
 
-  QRScanner({super.key, required this.course});
+  QRScanner({super.key, required this.course, required this.students});
 
   @override
-  State<QRScanner> createState() => _QRScannerState(course);
+  State<QRScanner> createState() => _QRScannerState(course, students);
 }
 
 class _QRScannerState extends State<QRScanner> {
   String course;
+  List<String> students;
+
   QRViewController? controller;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+
+  bool flashOn = false;
 
   // Since controller.pauseCamera() doesn't work we use a bool flag to detect if user exited the dialog.
   bool enteredDialog = false;
 
-  _QRScannerState(this.course);
+  _QRScannerState(this.course, this.students);
 
   @override
   void reassemble() {
@@ -36,18 +42,35 @@ class _QRScannerState extends State<QRScanner> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
-        children: [
-          Expanded(flex: 5, child: _buildQrView(context)),
-          Expanded(flex: 1, child: Text("test"))
-        ],
+        children: [Expanded(flex: 5, child: _buildQrView(context))],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
-      floatingActionButton: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          color: Colors.white,
-          icon: const Icon(Icons.arrow_back)),
+      floatingActionButtonLocation: FloatingActionButtonLocation.startDocked,
+      floatingActionButton:
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        IconButton(
+            onPressed: () {
+              Navigator.pop(context, students);
+            },
+            color: Colors.white,
+            icon: const Icon(Icons.arrow_back)),
+        Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.white, width: 3),
+              color: flashOn ? Colors.white : null,
+              shape: BoxShape.circle,
+            ),
+            margin: EdgeInsets.all(30),
+            child: IconButton(
+                onPressed: () async {
+                  setState(() {
+                    flashOn = !flashOn;
+                  });
+
+                  await controller!.toggleFlash();
+                },
+                color: flashOn ? Colors.black : Colors.white,
+                icon: Icon(Icons.flashlight_on)))
+      ]),
     );
   }
 
@@ -74,9 +97,19 @@ class _QRScannerState extends State<QRScanner> {
                 },
               ),
               TextButton(
-                onPressed: () {
+                onPressed: () async {
+                  SharedPreferences prefs =
+                      await SharedPreferences.getInstance();
+
+                  String newStudent = QRCode;
+                  List<String> addedStudents = List<String>.from(students)
+                    ..add(newStudent);
+
+                  prefs.setStringList(course, addedStudents);
+
                   setState(() {
                     enteredDialog = false;
+                    students = addedStudents;
                   });
 
                   Navigator.of(context).pop();
@@ -127,7 +160,7 @@ class _QRScannerState extends State<QRScanner> {
 
   void _onPermissionSet(BuildContext context, QRViewController ctrl, bool p) {
     if (!p) {
-      Navigator.pop(context);
+      Navigator.pop(context, students);
     }
   }
 

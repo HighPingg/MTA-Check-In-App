@@ -15,7 +15,7 @@ class ClassRoster extends StatefulWidget {
 
 class _ClassRosterState extends State<ClassRoster> {
   String course;
-  Set<String> students = {};
+  List<String> students = [];
 
   _ClassRosterState(this.course);
 
@@ -33,7 +33,7 @@ class _ClassRosterState extends State<ClassRoster> {
     List<String>? students = prefs.getStringList(course);
     if (students != null) {
       setState(() {
-        this.students = students.toSet();
+        this.students = students;
       });
     }
 
@@ -90,11 +90,16 @@ class _ClassRosterState extends State<ClassRoster> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 OutlinedButton(
-                    onPressed: () {
-                      Navigator.push(
+                    onPressed: () async {
+                      final returnedStudents = await Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => QRScanner(course: course)));
+                              builder: (context) => QRScanner(
+                                  course: course, students: students)));
+
+                      setState(() {
+                        students = returnedStudents;
+                      });
                     },
                     child: const Row(children: [
                       Icon(Icons.qr_code_scanner),
@@ -159,10 +164,10 @@ class _ClassRosterState extends State<ClassRoster> {
 
                   String newStudent =
                       "${nameFieldController.text} - ${bscFieldController.text}";
-                  Set<String> addedStudents = Set<String>.from(students)
+                  List<String> addedStudents = List<String>.from(students)
                     ..add(newStudent);
 
-                  prefs.setStringList(course, addedStudents.toList());
+                  prefs.setStringList(course, addedStudents);
                   setState(() {
                     students = addedStudents;
                   });
