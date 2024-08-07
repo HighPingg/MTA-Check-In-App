@@ -179,7 +179,7 @@ class _ClassRosterState extends State<ClassRoster> {
                                         children: [
                                           const Text("Fail"),
                                           Checkbox(
-                                            value: student.status == "Failed"
+                                            value: student.status == "Not completed"
                                                 ? true
                                                 : false,
                                             fillColor:
@@ -207,7 +207,7 @@ class _ClassRosterState extends State<ClassRoster> {
                                                 if(response.statusCode == 200) {
                                                   setState(() {
                                                     student.status = value == true
-                                                        ? "Failed"
+                                                        ? "Not completed"
                                                         : "Completed";
                                                   });
                                                 } else {
