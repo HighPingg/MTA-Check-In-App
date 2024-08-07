@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mta_check_in/CourseInterfaces.dart';
 import 'package:http/http.dart' as http;
+import 'package:mta_check_in/helperFuncs.dart';
 
 import 'dart:convert';
 
@@ -67,7 +68,6 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         courses = courseList;
       });
-
     } catch (error) {
       setState(() {
         courses = null;
@@ -96,49 +96,47 @@ class _MyHomePageState extends State<MyHomePage> {
                   )),
             ]),
           )),
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: courses != null
-            ?
-            courses!.map((course) {
-              return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => ClassRoster(courseId: course.id)),
-                    );
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black),
-                        borderRadius:
-                            const BorderRadius.all(Radius.circular(10))),
-                    padding: const EdgeInsets.all(10),
-                    margin: const EdgeInsets.all(10),
-                    width: double.infinity,
-                    child:Column(mainAxisAlignment: MainAxisAlignment.start, children: [
-                        Row(children: [Text(course.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
-                        SizedBox(height: 10),
-                        Row(children: [
-                          Icon(Icons.event),
-                          SizedBox(width: 5),
-                          Text(course.date.toString(), style: TextStyle(fontSize: 18))
-                        ]),
-                        SizedBox(height: 8),
-                        Row(children: [
-                          Icon(Icons.schedule),
-                          SizedBox(width: 5),
-                          Text(course.time.toString(), style: TextStyle(fontSize: 18))
-                        ]),
-                        ])
-                  ));
-            }).toList()
-          : 
-            [Text("error")]
-          ),
-        ),
+      body: courses != null
+          ? SingleChildScrollView(
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: courses!.map((course) {
+                    return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) =>
+                                    ClassRoster(course: course)),
+                          );
+                        },
+                        child: Container(
+                            decoration: BoxDecoration(
+                                border: Border.all(color: Colors.black),
+                                borderRadius: const BorderRadius.all(
+                                    Radius.circular(10))),
+                            padding: const EdgeInsets.all(10),
+                            margin: const EdgeInsets.all(10),
+                            width: double.infinity,
+                            child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Row(children: [
+                                    Text(course.name,
+                                        style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold))
+                                  ]),
+                                  const SizedBox(height: 10),
+                                  displayLineItem(const Icon(Icons.event),
+                                      "Date", course.date.toString()),
+                                  const SizedBox(height: 8),
+                                  displayLineItem(const Icon(Icons.schedule),
+                                      "Time", course.time.toString()),
+                                ])));
+                  }).toList()),
+            )
+          : Text("error"),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _showAddCourseDialog(context);
@@ -163,19 +161,18 @@ class _MyHomePageState extends State<MyHomePage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Add Class'),
-          content: Container(
-              child: Column(
+          title: const Text('Add Class'),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameFieldController,
-                decoration: InputDecoration(hintText: "Class name"),
+                decoration: const InputDecoration(hintText: "Class name"),
               ),
               const SizedBox(height: 10),
               TextField(
                 controller: _dateController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                     labelText: "Date",
                     filled: true,
                     prefixIcon: Icon(Icons.calendar_today),
@@ -193,7 +190,7 @@ class _MyHomePageState extends State<MyHomePage> {
               const SizedBox(height: 10),
               TextField(
                 controller: _timeController,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                     labelText: "Time",
                     filled: true,
                     prefixIcon: Icon(Icons.lock_clock),
@@ -201,15 +198,14 @@ class _MyHomePageState extends State<MyHomePage> {
                       borderSide: BorderSide.none,
                     ),
                     focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            BorderSide(color: const Color(0xff0039a6)))),
+                        borderSide: BorderSide(color: Color(0xff0039a6)))),
                 readOnly: true,
                 onTap: () {
                   _displayTimePicker();
                 },
               ),
             ],
-          )),
+          ),
           actions: [
             TextButton(
               child: const Text('Cancel'),
@@ -219,10 +215,9 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             TextButton(
               onPressed: () async {
-                
                 Navigator.of(context).pop();
               },
-              child: Text('OK'),
+              child: const Text('OK'),
             ),
           ],
         );

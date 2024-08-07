@@ -2,11 +2,13 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:mta_check_in/CourseInterfaces.dart';
+import 'package:mta_check_in/helperFuncs.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 class QRScanner extends StatefulWidget {
-  String course;
-  List<String> students;
+  Course course;
+  List<Student> students;
 
   QRScanner({super.key, required this.course, required this.students});
 
@@ -15,8 +17,8 @@ class QRScanner extends StatefulWidget {
 }
 
 class _QRScannerState extends State<QRScanner> {
-  String course;
-  List<String> students;
+  Course course;
+  List<Student> students;
 
   QRViewController? controller;
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
@@ -39,86 +41,137 @@ class _QRScannerState extends State<QRScanner> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [Expanded(flex: 5, child: _buildQrView(context))],
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.startDocked,
-      floatingActionButton:
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        IconButton(
-            onPressed: () {
-              Navigator.pop(context, students);
-            },
-            color: Colors.white,
-            icon: const Icon(Icons.arrow_back)),
-        Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.white, width: 3),
-              color: flashOn ? Colors.white : null,
-              shape: BoxShape.circle,
-            ),
-            margin: EdgeInsets.all(30),
-            child: IconButton(
-                onPressed: () async {
-                  setState(() {
-                    flashOn = !flashOn;
-                  });
-
-                  await controller!.toggleFlash();
+    return PopScope(
+        canPop: false,
+        child: Scaffold(
+          body: Column(
+            children: [Expanded(flex: 5, child: _buildQrView(context))],
+          ),
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.startDocked,
+          floatingActionButton:
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+            IconButton(
+                onPressed: () {
+                  Navigator.pop(context, students);
                 },
-                color: flashOn ? Colors.black : Colors.white,
-                icon: Icon(Icons.flashlight_on)))
-      ]),
-    );
+                color: Colors.white,
+                icon: const Icon(Icons.arrow_back)),
+            Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white, width: 3),
+                  color: flashOn ? Colors.white : null,
+                  shape: BoxShape.circle,
+                ),
+                margin: const EdgeInsets.all(30),
+                child: IconButton(
+                    onPressed: () async {
+                      setState(() {
+                        flashOn = !flashOn;
+                      });
+
+                      await controller!.toggleFlash();
+                    },
+                    color: flashOn ? Colors.black : Colors.white,
+                    icon: const Icon(Icons.flashlight_on)))
+          ]),
+        ));
   }
 
-  void _showAddStudentDialog(BuildContext context, String QRCode) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-            title: Text('New Student'),
-            content: Container(
-                child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [Text(QRCode)],
-            )),
-            actions: [
-              TextButton(
-                child: const Text('Ignore'),
-                onPressed: () {
-                  setState(() {
-                    enteredDialog = false;
-                  });
+  void _showAddStudentDialog(BuildContext context, String qrCode) {
+    // Search for student
+    Student? foundStudent;
+    for (Student student in students) {
+      if (student.employeeId == qrCode) {
+        foundStudent = student;
+        break;
+      }
+    }
 
-                  Navigator.of(context).pop();
-                },
-              ),
-              TextButton(
-                onPressed: () async {
-                  // SharedPreferences prefs =
-                  //     await SharedPreferences.getInstance();
+    if (foundStudent == null) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return PopScope(
+              canPop: false,
+              child: AlertDialog(
+                  title: const Row(children: [
+                    Icon(Icons.cancel, color: Colors.red),
+                    SizedBox(width: 10),
+                    Text('Not Found')
+                  ]),
+                  content: Container(
+                      child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text("Content:",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(qrCode)
+                    ],
+                  )),
+                  actions: [
+                    TextButton(
+                      child: const Text('Okay'),
+                      onPressed: () {
+                        setState(() {
+                          enteredDialog = false;
+                        });
 
-                  // String newStudent = QRCode;
-                  // List<String> addedStudents = List<String>.from(students)
-                  //   ..add(newStudent);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                  ]));
+        },
+      );
+    } else {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return PopScope(
+              canPop: false,
+              child: AlertDialog(
+                  title: Text('Check In Student?'),
+                  content: Container(
+                      child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text("NAME",
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(foundStudent!.employeeId),
+                    ],
+                  )),
+                  actions: [
+                    TextButton(
+                      child: const Text('Ignore'),
+                      onPressed: () {
+                        setState(() {
+                          enteredDialog = false;
+                        });
 
-                  // prefs.setStringList(course, addedStudents);
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        setState(() {
+                          enteredDialog = false;
 
-                  setState(() {
-                    enteredDialog = false;
-                    // students = addedStudents;
-                  });
+                          foundStudent!.status = "Completed";
+                        });
 
-                  Navigator.of(context).pop();
-                },
-                child: Text('Add'),
-              ),
-            ]);
-      },
-    );
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Check In'),
+                    ),
+                  ]));
+        },
+      );
+    }
   }
 
   Widget _buildQrView(BuildContext context) {

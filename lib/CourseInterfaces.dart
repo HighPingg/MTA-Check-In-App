@@ -49,14 +49,26 @@ class Course {
 }
 
 class Student {
-  String name;
-  String bsc;
+  // String name;
+  String employeeId;
+  String status;
 
-  Student(this.name, this.bsc);
+  Student(this.employeeId, this.status);
+
+  Student.fromJSON(Map<String, dynamic> json)
+      : 
+      // name = json['name'] as String,
+        employeeId = json['employee_id'] as String,
+        status = json['status'] as String;
+
+  Map<String, dynamic> toJSON() =>
+      {
+        // 'name': name,
+        'employee_id': employeeId, 'status': status};
 
   @override
   String toString() {
-    return "$name;$bsc";
+    return "name;$employeeId;$status";
   }
 
   static Student fromString(String string) {

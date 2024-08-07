@@ -4,49 +4,53 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import 'package:mta_check_in/CourseInterfaces.dart'
+import 'package:mta_check_in/CourseInterfaces.dart';
 import 'package:mta_check_in/QRScanner.dart';
+import 'package:mta_check_in/helperFuncs.dart';
 
 class ClassRoster extends StatefulWidget {
-  String courseId;
+  Course course;
 
-  ClassRoster({super.key, required this.courseId});
+  ClassRoster({super.key, required this.course});
 
   @override
-  State<ClassRoster> createState() => _ClassRosterState(courseId);
+  State<ClassRoster> createState() => _ClassRosterState(course);
 }
 
 class _ClassRosterState extends State<ClassRoster> {
-  String courseId;
-  List<String> students = [];
+  List<Student> students = [];
+  Course course;
+  String err = '';
 
-  _ClassRosterState(this.courseId);
+  _ClassRosterState(this.course);
 
   @override
   void initState() {
     super.initState();
 
-    loadCourse(courseId);
+    loadCourse(course.id);
   }
 
   // Load course list onto courses array.
   void loadCourse(String courseId) async {
     try {
-      final response = await http.get(Uri.parse('$BACKEND_URL/classes/$courseId'));
+      final response =
+          await http.get(Uri.parse('$BACKEND_URL/classes/$courseId'));
 
       final responseData = json.decode(response.body);
-      List<Course> courseList = [];
-      for (var course in responseData) {
-        courseList.add(Course.fromJSON(course));
+      Course courseData = Course.fromJSON(responseData);
+
+      List<Student> studentData = [];
+      for (var student in responseData['students']) {
+        studentData.add(Student.fromJSON(student));
       }
 
       setState(() {
-        courses = courseList;
+        students = studentData;
+        course = courseData;
       });
-
     } catch (error) {
       setState(() {
-        courses = null;
         err = error.toString();
       });
     }
@@ -55,110 +59,215 @@ class _ClassRosterState extends State<ClassRoster> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: MediaQuery.of(context).size.height * 0.1,
-        backgroundColor: const Color(0xff0039a6),
-        foregroundColor: const Color(0xffffffff),
-        centerTitle: false,
-        title: Container(
-          height: MediaQuery.of(context).size.height * 0.05,
-          child: Row(children: [
-            Image.asset("lib/assets/MTA_NYC_logo.png", fit: BoxFit.fitHeight),
-            Container(
-                padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
-                child: const Text(
-                  "Check In",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                )),
-          ]),
+        appBar: AppBar(
+          toolbarHeight: MediaQuery.of(context).size.height * 0.1,
+          backgroundColor: const Color(0xff0039a6),
+          foregroundColor: const Color(0xffffffff),
+          centerTitle: false,
+          title: Container(
+            height: MediaQuery.of(context).size.height * 0.05,
+            child: Row(children: [
+              Image.asset("lib/assets/MTA_NYC_logo.png", fit: BoxFit.fitHeight),
+              Container(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 0, 0),
+                  child: const Text(
+                    "Check In",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  )),
+            ]),
+          ),
+          // actions: [
+          //   Container(
+          //       margin: const EdgeInsets.all(10),
+          //       child: IconButton(
+          //           onPressed: () {},
+          //           tooltip: "Delete Course",
+          //           icon: const Icon(Icons.delete)))
+          // ],
         ),
-        actions: [
-          Container(
-              margin: const EdgeInsets.all(10),
-              child: IconButton(
-                  onPressed: () {},
-                  tooltip: "Delete Course",
-                  icon: const Icon(Icons.delete)))
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Text(course,
-                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
-            Column(
-                children: students.map((student) {
-              return Container(
-                decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black),
-                    borderRadius: const BorderRadius.all(Radius.circular(10))),
-                padding: const EdgeInsets.all(10),
-                margin: const EdgeInsets.all(10),
-                width: double.infinity,
-                child: Text(student.toString(), style: TextStyle(fontSize: 18)),
-              );
-            }).toList()),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                OutlinedButton(
-                    onPressed: () async {
-                      final returnedStudents = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => QRScanner(
-                                  course: course, students: students)));
+        body: err == ""
+            ? SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Text(course.name,
+                        style: const TextStyle(
+                            fontSize: 25, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            displayLineItem(const Icon(Icons.event), "Date",
+                                course.date.toString()),
+                            const SizedBox(height: 8),
+                            displayLineItem(const Icon(Icons.schedule), "Time",
+                                course.time.toString()),
+                            const SizedBox(height: 8),
+                            displayLineItem(const Icon(Icons.person),
+                                "Instructor", course.instructor),
+                          ],
+                        ),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            displayLineItem(const Icon(Icons.meeting_room),
+                                "Room", course.room),
+                            const SizedBox(height: 8),
+                            displayLineItem(const Icon(Icons.code),
+                                "Course Code", course.courseCode),
+                          ],
+                        )
+                      ],
+                    ),
+                    Text(course.id),
+                    Column(
+                        children: students.map((student) {
+                      return Container(
+                          decoration: BoxDecoration(
+                              border: Border.all(color: Colors.black),
+                              borderRadius:
+                                  const BorderRadius.all(Radius.circular(10)),
+                              color: student.status == "Not checked in"
+                                  ? Colors.grey
+                                  : Colors.transparent),
+                          padding: const EdgeInsets.all(10),
+                          margin: const EdgeInsets.all(10),
+                          width: double.infinity,
+                          child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text("NAME",
+                                        style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold)),
+                                    displayLineItem(const Icon(Icons.person),
+                                        "Employee ID", student.employeeId),
+                                    Row(
+                                      children: [
+                                        statusIcon(student.status),
+                                        const SizedBox(width: 5),
+                                        Text(student.status),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                student.status != "Not checked in"
+                                    ? Column(
+                                        children: [
+                                          const Text("Fail"),
+                                          Checkbox(
+                                            value: student.status == "Failed"
+                                                ? true
+                                                : false,
+                                            fillColor:
+                                                WidgetStateProperty.resolveWith(
+                                                    (states) {
+                                              if (states.contains(
+                                                  WidgetState.selected)) {
+                                                return const Color(0xff0039a6);
+                                              }
+                                            }),
+                                            onChanged: (bool? value) {
+                                              setState(() {
+                                                student.status = value == true
+                                                    ? "Failed"
+                                                    : "Completed";
+                                              });
+                                            },
+                                          )
+                                        ],
+                                      )
+                                    : const SizedBox()
+                              ]));
+                    }).toList()),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        OutlinedButton(
+                            style: ButtonStyle(
+                              foregroundColor:
+                                  WidgetStateProperty.resolveWith((states) {
+                                return const Color(0xff0039a6);
+                              }),
+                              overlayColor:
+                                  WidgetStateProperty.resolveWith((states) {
+                                return Color.fromARGB(12, 0, 58, 166);
+                              }),
+                            ),
+                            onPressed: () async {
+                              final returnedStudents = await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => QRScanner(
+                                          course: course, students: students)));
 
-                      setState(() {
-                        students = returnedStudents;
-                      });
-                    },
-                    child: Row(children: [
-                      Icon(Icons.qr_code_scanner),
-                      SizedBox(width: 10),
-                      Text('Scan')
-                    ])),
-                OutlinedButton(
-                    onPressed: () {
-                      _showAddStudentDialog(context);
-                    },
-                    child: Row(children: [
-                      Icon(Icons.edit),
-                      SizedBox(width: 10),
-                      Text('Manual')
-                    ]))
-              ],
-            )
-          ],
-        ),
-      ),
-    );
+                              setState(() {
+                                students = returnedStudents;
+                              });
+                            },
+                            child: const Row(children: [
+                              Icon(Icons.qr_code_scanner),
+                              SizedBox(width: 10),
+                              Text('Scan')
+                            ])),
+                        OutlinedButton(
+                            style: ButtonStyle(
+                              foregroundColor:
+                                  WidgetStateProperty.resolveWith((states) {
+                                return const Color(0xff0039a6);
+                              }),
+                              overlayColor:
+                                  WidgetStateProperty.resolveWith((states) {
+                                return Color.fromARGB(12, 0, 58, 166);
+                              }),
+                            ),
+                            onPressed: () {
+                              _showAddStudentDialog(context);
+                            },
+                            child: const Row(children: [
+                              Icon(Icons.edit),
+                              SizedBox(width: 10),
+                              Text('Manual')
+                            ]))
+                      ],
+                    )
+                  ],
+                ),
+              )
+            : Text(err));
   }
 
   void _showAddStudentDialog(BuildContext context) {
     final nameFieldController = TextEditingController();
-    final bscFieldController = TextEditingController();
+    final emplIdFieldController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-            title: Text('Add Student'),
+            title: const Text('Add Student'),
             content: Container(
                 child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: nameFieldController,
-                  decoration: InputDecoration(hintText: "Student name"),
+                  decoration: const InputDecoration(hintText: "Student name"),
                 ),
                 TextField(
-                  controller: bscFieldController,
-                  decoration: InputDecoration(hintText: "BSC ID"),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: <TextInputFormatter>[
-                    FilteringTextInputFormatter.digitsOnly
-                  ],
+                  controller: emplIdFieldController,
+                  decoration: const InputDecoration(hintText: "Employee ID"),
+                  // keyboardType: TextInputType.number,
+                  // inputFormatters: <TextInputFormatter>[
+                  //   FilteringTextInputFormatter.digitsOnly
+                  // ],
                 ),
               ],
             )),
@@ -171,18 +280,10 @@ class _ClassRosterState extends State<ClassRoster> {
               ),
               TextButton(
                 onPressed: () async {
-                  // SharedPreferences prefs =
-                  //     await SharedPreferences.getInstance();
-
-                  // String newStudent =
-                  //     "${nameFieldController.text} - ${bscFieldController.text}";
-                  // List<String> addedStudents = List<String>.from(students)
-                  //   ..add(newStudent);
-
-                  // prefs.setStringList(course, addedStudents);
-                  // setState(() {
-                  //   students = addedStudents;
-                  // });
+                  setState(() {
+                    students
+                        .add(Student(emplIdFieldController.text, "Not checked in"));
+                  });
 
                   Navigator.of(context).pop();
                 },
