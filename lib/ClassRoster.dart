@@ -57,6 +57,7 @@ class _ClassRosterState extends State<ClassRoster> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -179,7 +180,7 @@ class _ClassRosterState extends State<ClassRoster> {
                                         children: [
                                           const Text("Fail"),
                                           Checkbox(
-                                            value: student.status == "Failed"
+                                            value: student.status == "Not completed"
                                                 ? true
                                                 : false,
                                             fillColor:
@@ -207,7 +208,7 @@ class _ClassRosterState extends State<ClassRoster> {
                                                 if(response.statusCode == 200) {
                                                   setState(() {
                                                     student.status = value == true
-                                                        ? "Failed"
+                                                        ? "Not completed"
                                                         : "Completed";
                                                   });
                                                 } else {
@@ -222,7 +223,40 @@ class _ClassRosterState extends State<ClassRoster> {
                                           )
                                         ],
                                       )
-                                    : const SizedBox()
+                                    : Column(
+                                        children: [
+                                          const Text("Check In"),
+                                          IconButton(
+                                            icon: const Icon(Icons.check),
+                                            onPressed: () async {
+                                              try {
+
+                                                final response = await http.put(
+                                                  Uri.parse('$BACKEND_URL/classes/${course.id}/students/${student.employeeId}/status'),
+                                                  headers: {
+                                                    'Content-type': 'application/json'
+                                                  },
+                                                  body: jsonEncode(<String, String>{
+                                                    'status': 'Completed'
+                                                  })
+                                                );
+
+                                                if(response.statusCode == 200) {
+                                                  setState(() {
+                                                    student.status = "Completed";
+                                                  });
+                                                } else {
+                                                  throw Exception();
+                                                }
+                                              } catch(e) {
+                                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                                    content: Text("Failed to update status."),
+                                                ));
+                                              }
+                                            },
+                                          )
+                                        ],
+                                      )
                               ]));
                     }).toList()),
                     Row(
@@ -392,5 +426,3 @@ class _ClassRosterState extends State<ClassRoster> {
     );
   }
 }
-
-
