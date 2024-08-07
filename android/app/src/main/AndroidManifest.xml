@@ -1,5 +1,9 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
+          tools:ignore="ExtraText">
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
+        tools:ignore="ExtraText"
         android:label="Check In"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">

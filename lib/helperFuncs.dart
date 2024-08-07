@@ -25,19 +25,19 @@ Icon statusIcon(String status) {
   }
 }
 
-Future<String> getExternalDocumentPathHelp() async { 
-    var status = await Permission.storage.status; 
-    if (!status.isGranted) { 
-      await Permission.storage.request(); 
-    } 
-    Directory _directory = Directory(""); 
-    if (Platform.isAndroid) { 
-      _directory = Directory("/storage/emulated/0/Download"); 
-    } else { 
-      _directory = await getApplicationDocumentsDirectory(); 
-    } 
-  
-    final exPath = _directory.path; 
-    await Directory(exPath).create(recursive: true); 
-    return exPath; 
+Future<String> getExternalDocumentPathHelp() async {
+  var status = await Permission.storage.status;
+  if (!status.isGranted) {
+    await Permission.storage.request();
   }
+  Directory _directory = Directory("");
+  if (Platform.isAndroid) {
+    _directory = Directory("/storage/emulated/0/Documents");
+  } else {
+    _directory = await getApplicationDocumentsDirectory();
+  }
+
+  final exPath = _directory.path;
+  await Directory(exPath).create(recursive: true);
+  return exPath;
+}

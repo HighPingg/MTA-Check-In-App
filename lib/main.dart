@@ -136,7 +136,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 ])));
                   }).toList()),
             )
-          : Text("error"),
+          : Text(err),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _showAddCourseDialog(context);
