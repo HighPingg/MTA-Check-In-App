@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class QRScanner extends StatefulWidget {
   String course;
@@ -77,6 +76,7 @@ class _QRScannerState extends State<QRScanner> {
   void _showAddStudentDialog(BuildContext context, String QRCode) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
             title: Text('New Student'),
@@ -98,18 +98,18 @@ class _QRScannerState extends State<QRScanner> {
               ),
               TextButton(
                 onPressed: () async {
-                  SharedPreferences prefs =
-                      await SharedPreferences.getInstance();
+                  // SharedPreferences prefs =
+                  //     await SharedPreferences.getInstance();
 
-                  String newStudent = QRCode;
-                  List<String> addedStudents = List<String>.from(students)
-                    ..add(newStudent);
+                  // String newStudent = QRCode;
+                  // List<String> addedStudents = List<String>.from(students)
+                  //   ..add(newStudent);
 
-                  prefs.setStringList(course, addedStudents);
+                  // prefs.setStringList(course, addedStudents);
 
                   setState(() {
                     enteredDialog = false;
-                    students = addedStudents;
+                    // students = addedStudents;
                   });
 
                   Navigator.of(context).pop();

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mta_check_in/CourseInterfaces.dart';
+import 'package:http/http.dart' as http;
+
+import 'dart:convert';
 
 import 'ClassRoster.dart';
 
@@ -40,12 +43,8 @@ final TimeOfDay _timeNow = TimeOfDay.now();
 final DateTime _dateNow = DateTime.now();
 
 class _MyHomePageState extends State<MyHomePage> {
-  Set<String> courses = {};
-
-  final _dateController =
-      TextEditingController(text: _dateNow.toString().split(" ")[0]);
-  final _timeController =
-      TextEditingController(text: "${_timeNow.hour}:${_timeNow.minute}");
+  List<Course>? courses = [];
+  String err = '';
 
   @override
   void initState() {
@@ -56,12 +55,23 @@ class _MyHomePageState extends State<MyHomePage> {
 
   // Load course list onto courses array.
   void loadCourses() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    try {
+      final response = await http.get(Uri.parse('$BACKEND_URL/classes'));
 
-    List<String>? courses = prefs.getStringList('courses');
-    if (courses != null) {
+      final responseData = json.decode(response.body);
+      List<Course> courseList = [];
+      for (var course in responseData) {
+        courseList.add(Course.fromJSON(course));
+      }
+
       setState(() {
-        this.courses = courses.toSet();
+        courses = courseList;
+      });
+
+    } catch (error) {
+      setState(() {
+        courses = null;
+        err = error.toString();
       });
     }
   }
@@ -89,29 +99,46 @@ class _MyHomePageState extends State<MyHomePage> {
       body: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
-          children: courses.map((course) {
-            return GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => ClassRoster(course: course)),
-                  );
-                },
-                child: Container(
-                  decoration: BoxDecoration(
-                      border: Border.all(color: Colors.black),
-                      borderRadius:
-                          const BorderRadius.all(Radius.circular(10))),
-                  padding: const EdgeInsets.all(10),
-                  margin: const EdgeInsets.all(10),
-                  width: double.infinity,
-                  child:
-                      Text(course.toString(), style: TextStyle(fontSize: 18)),
-                ));
-          }).toList(),
+          children: courses != null
+            ?
+            courses!.map((course) {
+              return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => ClassRoster(courseId: course.id)),
+                    );
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                        border: Border.all(color: Colors.black),
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(10))),
+                    padding: const EdgeInsets.all(10),
+                    margin: const EdgeInsets.all(10),
+                    width: double.infinity,
+                    child:Column(mainAxisAlignment: MainAxisAlignment.start, children: [
+                        Row(children: [Text(course.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
+                        SizedBox(height: 10),
+                        Row(children: [
+                          Icon(Icons.event),
+                          SizedBox(width: 5),
+                          Text(course.date.toString(), style: TextStyle(fontSize: 18))
+                        ]),
+                        SizedBox(height: 8),
+                        Row(children: [
+                          Icon(Icons.schedule),
+                          SizedBox(width: 5),
+                          Text(course.time.toString(), style: TextStyle(fontSize: 18))
+                        ]),
+                        ])
+                  ));
+            }).toList()
+          : 
+            [Text("error")]
+          ),
         ),
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           _showAddCourseDialog(context);
@@ -123,6 +150,11 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
     );
   }
+
+  final _dateController =
+      TextEditingController(text: _dateNow.toString().split(" ")[0]);
+  final _timeController =
+      TextEditingController(text: "${_timeNow.hour}:${_timeNow.minute}");
 
   void _showAddCourseDialog(BuildContext context) {
     final nameFieldController = TextEditingController();
@@ -187,18 +219,7 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             TextButton(
               onPressed: () async {
-                SharedPreferences prefs = await SharedPreferences.getInstance();
-                String newClass =
-                    "${nameFieldController.text} - ${_dateController.text} @ ${_timeController.text}";
-
-                Set<String> addedCourses = Set<String>.from(courses)
-                  ..add(newClass);
-
-                prefs.setStringList("courses", addedCourses.toList());
-                setState(() {
-                  courses = addedCourses;
-                });
-
+                
                 Navigator.of(context).pop();
               },
               child: Text('OK'),

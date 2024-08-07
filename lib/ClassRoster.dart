@@ -1,43 +1,55 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import 'package:mta_check_in/CourseInterfaces.dart'
 import 'package:mta_check_in/QRScanner.dart';
 
 class ClassRoster extends StatefulWidget {
-  String course;
+  String courseId;
 
-  ClassRoster({super.key, required this.course});
+  ClassRoster({super.key, required this.courseId});
 
   @override
-  State<ClassRoster> createState() => _ClassRosterState(course);
+  State<ClassRoster> createState() => _ClassRosterState(courseId);
 }
 
 class _ClassRosterState extends State<ClassRoster> {
-  String course;
+  String courseId;
   List<String> students = [];
 
-  _ClassRosterState(this.course);
+  _ClassRosterState(this.courseId);
 
   @override
   void initState() {
     super.initState();
 
-    loadCourse(course);
+    loadCourse(courseId);
   }
 
   // Load course list onto courses array.
-  void loadCourse(course) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+  void loadCourse(String courseId) async {
+    try {
+      final response = await http.get(Uri.parse('$BACKEND_URL/classes/$courseId'));
 
-    List<String>? students = prefs.getStringList(course);
-    if (students != null) {
+      final responseData = json.decode(response.body);
+      List<Course> courseList = [];
+      for (var course in responseData) {
+        courseList.add(Course.fromJSON(course));
+      }
+
       setState(() {
-        this.students = students;
+        courses = courseList;
+      });
+
+    } catch (error) {
+      setState(() {
+        courses = null;
+        err = error.toString();
       });
     }
-
-    print(students);
   }
 
   @override
@@ -101,7 +113,7 @@ class _ClassRosterState extends State<ClassRoster> {
                         students = returnedStudents;
                       });
                     },
-                    child: const Row(children: [
+                    child: Row(children: [
                       Icon(Icons.qr_code_scanner),
                       SizedBox(width: 10),
                       Text('Scan')
@@ -110,7 +122,7 @@ class _ClassRosterState extends State<ClassRoster> {
                     onPressed: () {
                       _showAddStudentDialog(context);
                     },
-                    child: const Row(children: [
+                    child: Row(children: [
                       Icon(Icons.edit),
                       SizedBox(width: 10),
                       Text('Manual')
@@ -159,18 +171,18 @@ class _ClassRosterState extends State<ClassRoster> {
               ),
               TextButton(
                 onPressed: () async {
-                  SharedPreferences prefs =
-                      await SharedPreferences.getInstance();
+                  // SharedPreferences prefs =
+                  //     await SharedPreferences.getInstance();
 
-                  String newStudent =
-                      "${nameFieldController.text} - ${bscFieldController.text}";
-                  List<String> addedStudents = List<String>.from(students)
-                    ..add(newStudent);
+                  // String newStudent =
+                  //     "${nameFieldController.text} - ${bscFieldController.text}";
+                  // List<String> addedStudents = List<String>.from(students)
+                  //   ..add(newStudent);
 
-                  prefs.setStringList(course, addedStudents);
-                  setState(() {
-                    students = addedStudents;
-                  });
+                  // prefs.setStringList(course, addedStudents);
+                  // setState(() {
+                  //   students = addedStudents;
+                  // });
 
                   Navigator.of(context).pop();
                 },
