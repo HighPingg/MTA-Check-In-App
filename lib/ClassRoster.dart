@@ -159,7 +159,7 @@ class _ClassRosterState extends State<ClassRoster> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text("NAME",
+                                    Text(student.name,
                                         style: const TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold)),
@@ -190,12 +190,34 @@ class _ClassRosterState extends State<ClassRoster> {
                                                 return const Color(0xff0039a6);
                                               }
                                             }),
-                                            onChanged: (bool? value) {
-                                              setState(() {
-                                                student.status = value == true
-                                                    ? "Failed"
-                                                    : "Completed";
-                                              });
+                                            onChanged: (bool? value) async {
+                                              try {
+                                                String newStatus = value == true ? "Not completed" : "Completed";
+
+                                                final response = await http.put(
+                                                  Uri.parse('$BACKEND_URL/classes/${course.id}/students/${student.employeeId}/status'),
+                                                  headers: {
+                                                    'Content-type': 'application/json'
+                                                  },
+                                                  body: jsonEncode(<String, String>{
+                                                    'status': newStatus
+                                                  })
+                                                );
+
+                                                if(response.statusCode == 200) {
+                                                  setState(() {
+                                                    student.status = value == true
+                                                        ? "Failed"
+                                                        : "Completed";
+                                                  });
+                                                } else {
+                                                  throw Exception();
+                                                }
+                                              } catch(e) {
+                                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                                    content: Text("Failed to update status."),
+                                                ));
+                                              }
                                             },
                                           )
                                         ],
@@ -274,10 +296,6 @@ class _ClassRosterState extends State<ClassRoster> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                  controller: nameFieldController,
-                  decoration: const InputDecoration(hintText: "Student name"),
-                ),
-                TextField(
                   controller: emplIdFieldController,
                   decoration: const InputDecoration(hintText: "Employee ID"),
                   // keyboardType: TextInputType.number,
@@ -296,10 +314,33 @@ class _ClassRosterState extends State<ClassRoster> {
               ),
               TextButton(
                 onPressed: () async {
-                  setState(() {
-                    students.add(
-                        Student(emplIdFieldController.text, "Not checked in"));
-                  });
+                  try {
+                    final response = await http.post(
+                      Uri.parse('$BACKEND_URL/classes/${course.id}/students'),
+                      headers: {
+                        'Content-type': 'application/json'
+                      },
+                      body: jsonEncode(<String, String>{
+                        'employee_id': emplIdFieldController.text
+                      })
+                    );
+                    if(response.statusCode == 201) {
+                      final responseData = json.decode(response.body);
+                      String name = responseData['student_name'];
+                      setState(() {
+                        students.add(
+                            Student(name, emplIdFieldController.text, "Not checked in"));
+                      });
+                    } else if(response.statusCode == 404) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text("Student does not exist."),
+                      ));
+                    }
+                  } catch(e) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text("Failed to add student."),
+                    ));
+                  }
 
                   Navigator.of(context).pop();
                 },
@@ -351,3 +392,5 @@ class _ClassRosterState extends State<ClassRoster> {
     );
   }
 }
+
+
