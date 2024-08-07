@@ -31,11 +31,11 @@ class Course {
 
   @override
   String toString() {
-    return "$name;$date;$time;$instructor;$id;$room;$courseCode";
+    return "$name,$date,$time,$instructor,$id,$room,$courseCode";
   }
 
   static Course fromString(String string) {
-    final splittedString = string.split(";");
+    final splittedString = string.split(",");
 
     return Course(
         splittedString[0],
@@ -56,23 +56,23 @@ class Student {
   Student(this.employeeId, this.status);
 
   Student.fromJSON(Map<String, dynamic> json)
-      : 
-      // name = json['name'] as String,
+      :
+        // name = json['name'] as String,
         employeeId = json['employee_id'] as String,
         status = json['status'] as String;
 
-  Map<String, dynamic> toJSON() =>
-      {
+  Map<String, dynamic> toJSON() => {
         // 'name': name,
-        'employee_id': employeeId, 'status': status};
+        'employee_id': employeeId, 'status': status
+      };
 
   @override
   String toString() {
-    return "name;$employeeId;$status";
+    return "name,$employeeId,$status";
   }
 
   static Student fromString(String string) {
-    final splittedString = string.split(";");
+    final splittedString = string.split(",");
 
     return new Student(splittedString[0], splittedString[1]);
   }

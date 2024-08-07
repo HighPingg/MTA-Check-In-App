@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:mta_check_in/CourseInterfaces.dart';
 import 'package:mta_check_in/QRScanner.dart';
@@ -76,14 +77,29 @@ class _ClassRosterState extends State<ClassRoster> {
                   )),
             ]),
           ),
-          // actions: [
-          //   Container(
-          //       margin: const EdgeInsets.all(10),
-          //       child: IconButton(
-          //           onPressed: () {},
-          //           tooltip: "Delete Course",
-          //           icon: const Icon(Icons.delete)))
-          // ],
+          actions: [
+            Container(
+                margin: const EdgeInsets.all(10),
+                child: IconButton(
+                    onPressed: () async {
+                      // Write data to temp file
+                      final path = await getExternalDocumentPathHelp();
+                      String filePath = '$path/${course.id}.csv';
+
+                      if (!await _showSaveFileDialog(context, filePath)) return;
+
+                      File file = File(filePath);
+
+                      String writeString = "Name,Employee Id,Status\n";
+                      for (Student student in students) {
+                        writeString += "${student.toString()}\n";
+                      }
+
+                      await file.writeAsString(writeString);
+                    },
+                    tooltip: "Share",
+                    icon: const Icon(Icons.ios_share)))
+          ],
         ),
         body: err == ""
             ? SingleChildScrollView(
@@ -281,8 +297,8 @@ class _ClassRosterState extends State<ClassRoster> {
               TextButton(
                 onPressed: () async {
                   setState(() {
-                    students
-                        .add(Student(emplIdFieldController.text, "Not checked in"));
+                    students.add(
+                        Student(emplIdFieldController.text, "Not checked in"));
                   });
 
                   Navigator.of(context).pop();
@@ -290,6 +306,47 @@ class _ClassRosterState extends State<ClassRoster> {
                 child: Text('OK'),
               ),
             ]);
+      },
+    );
+  }
+
+  Future<bool> _showSaveFileDialog(
+      BuildContext context, String filePath) async {
+    return await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return PopScope(
+            canPop: false,
+            child: AlertDialog(
+                title: const Text('Save File'),
+                content: RichText(
+                  text: TextSpan(
+                      text: "Save file to ",
+                      style: TextStyle(color: Colors.black),
+                      children: <TextSpan>[
+                        TextSpan(
+                            text: filePath,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black)),
+                        const TextSpan(
+                            text: "?", style: TextStyle(color: Colors.black))
+                      ]),
+                ),
+                actions: [
+                  TextButton(
+                    child: const Text('Cancel'),
+                    onPressed: () {
+                      Navigator.of(context).pop(false);
+                    },
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      Navigator.of(context).pop(true);
+                    },
+                    child: Text('OK'),
+                  ),
+                ]));
       },
     );
   }
