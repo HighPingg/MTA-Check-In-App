@@ -52,29 +52,31 @@ class Student {
   // String name;
   String employeeId;
   String status;
+  String name;
 
-  Student(this.employeeId, this.status);
+  Student(this.name, this.employeeId, this.status);
 
   Student.fromJSON(Map<String, dynamic> json)
       :
         // name = json['name'] as String,
         employeeId = json['employee_id'] as String,
-        status = json['status'] as String;
+        status = json['status'] as String,
+        name = json['name'] as String;
 
   Map<String, dynamic> toJSON() => {
-        // 'name': name,
+        'name': name,
         'employee_id': employeeId, 'status': status
       };
 
   @override
   String toString() {
-    return "name,$employeeId,$status";
+    return "$name,$employeeId,$status";
   }
 
   static Student fromString(String string) {
     final splittedString = string.split(",");
 
-    return new Student(splittedString[0], splittedString[1]);
+    return new Student(splittedString[0], splittedString[1], splittedString[2]);
   }
 }
 
